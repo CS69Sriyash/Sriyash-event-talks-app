@@ -97,6 +97,18 @@
                     <p class="page-subtitle" id="feed-updated-time">Last updated: Checking...</p>
                 </div>
                 <div class="header-right">
+                    <div class="theme-switch-wrapper" title="Toggle color scheme">
+                        <i data-lucide="moon" class="theme-icon icon-moon"></i>
+                        <label class="theme-switch" for="theme-checkbox">
+                            <input type="checkbox" id="theme-checkbox" />
+                            <div class="slider round"></div>
+                        </label>
+                        <i data-lucide="sun" class="theme-icon icon-sun"></i>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-export-csv" title="Export current list to CSV">
+                        <i data-lucide="download"></i>
+                        <span>Export CSV</span>
+                    </button>
                     <button class="btn btn-primary" id="btn-refresh">
                         <i data-lucide="refresh-cw" class="btn-spinner" id="refresh-spinner"></i>
                         <span>Refresh Notes</span>
@@ -126,10 +138,16 @@
                                 <span class="badge badge-date" id="detail-date">June 16, 2026</span>
                                 <span class="badge" id="detail-type">Feature</span>
                             </div>
-                            <a href="#" target="_blank" class="detail-link" id="detail-doc-link">
-                                <span>Official Docs</span>
-                                <i data-lucide="external-link"></i>
-                            </a>
+                            <div class="detail-actions">
+                                <button class="btn-detail-action" id="btn-copy-detail" title="Copy to clipboard">
+                                    <i data-lucide="copy" id="copy-icon"></i>
+                                    <span id="copy-text">Copy</span>
+                                </button>
+                                <a href="#" target="_blank" class="detail-link" id="detail-doc-link">
+                                    <span>Official Docs</span>
+                                    <i data-lucide="external-link"></i>
+                                </a>
+                            </div>
                         </div>
                         <div class="note-detail-content" id="detail-content">
                             <!-- HTML note content injected here -->

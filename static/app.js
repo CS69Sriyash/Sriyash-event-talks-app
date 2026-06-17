@@ -33,6 +33,10 @@ const charProgressCircle = document.getElementById('char-progress-circle');
 const charCountText = document.getElementById('char-count-text');
 const btnShareTweet = document.getElementById('btn-share-tweet');
 
+const btnExportCsv = document.getElementById('btn-export-csv');
+const themeCheckbox = document.getElementById('theme-checkbox');
+const btnCopyDetail = document.getElementById('btn-copy-detail');
+
 // Circular progress constants
 const CIRCLE_RADIUS = 12;
 const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS; // ~75.4
@@ -89,6 +93,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Share Tweet action
     btnShareTweet.addEventListener('click', shareOnTwitter);
+
+    // Initialize Theme Switcher
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    if (currentTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeCheckbox.checked = true;
+    }
+    
+    themeCheckbox.addEventListener('change', () => {
+        if (themeCheckbox.checked) {
+            document.body.classList.add('light-mode');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.classList.remove('light-mode');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
+    // CSV Export
+    btnExportCsv.addEventListener('click', exportToCSV);
+
+    // Detail copy button
+    btnCopyDetail.addEventListener('click', copySelectedNoteToClipboard);
 
     // Load notes initially
     fetchReleaseNotes();
@@ -234,7 +261,18 @@ function renderNotesList() {
                 <span class="note-item-type">${note.type}</span>
             </div>
             <p class="note-item-snippet">${snippetText}</p>
+            <button class="btn-list-copy" title="Copy clean text">
+                <i data-lucide="copy"></i>
+            </button>
         `;
+
+        // Copy button in list item handler
+        const copyBtn = noteItem.querySelector('.btn-list-copy');
+        copyBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card selection click
+            const cleanText = `${note.date} - ${note.type}:\n${snippetText}\n\nRead more: ${note.link}`;
+            copyTextToClipboard(cleanText, copyBtn);
+        });
 
         noteItem.addEventListener('click', () => {
             selectNote(note.id);
@@ -242,6 +280,9 @@ function renderNotesList() {
 
         notesList.appendChild(noteItem);
     });
+
+    // Make sure sidebar copy icons are rendered
+    lucide.createIcons();
 }
 
 // Select a release note and render its details
@@ -402,4 +443,93 @@ function showError() {
     listLoading.classList.add('hidden');
     notesList.classList.add('hidden');
     listError.classList.remove('hidden');
+}
+
+// Clipboard copying utility
+async function copyTextToClipboard(text, button) {
+    try {
+        await navigator.clipboard.writeText(text);
+        button.classList.add('success');
+        
+        const originalHTML = button.innerHTML;
+        
+        // Show success state
+        const textSpan = button.querySelector('span');
+        if (textSpan) {
+            button.innerHTML = `<i data-lucide="check"></i> <span>Copied!</span>`;
+        } else {
+            button.innerHTML = `<i data-lucide="check"></i>`;
+        }
+        lucide.createIcons();
+        
+        setTimeout(() => {
+            button.classList.remove('success');
+            button.innerHTML = originalHTML;
+            lucide.createIcons();
+        }, 1800);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+}
+
+// Copies the currently loaded detail note
+function copySelectedNoteToClipboard() {
+    if (!state.selectedNote) return;
+    
+    const note = state.selectedNote;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = note.content_html;
+    const h3 = tempDiv.querySelector('h3');
+    if (h3) h3.remove();
+    const cleanContent = tempDiv.innerText.trim();
+    
+    const formattedText = `BigQuery Release Note [${note.date}] - ${note.type}:\n\n${cleanContent}\n\nRead more: ${note.link}`;
+    copyTextToClipboard(formattedText, btnCopyDetail);
+}
+
+// Exports filtered notes list to a downloadable CSV file
+function exportToCSV() {
+    if (state.filteredNotes.length === 0) {
+        alert("No release notes to export.");
+        return;
+    }
+    
+    let csvContent = "\ufeffDate,Type,Content,Link\n"; // Include BOM for proper UTF-8 Excel parsing
+    
+    state.filteredNotes.forEach(note => {
+        const date = escapeCSVField(note.date);
+        const type = escapeCSVField(note.type);
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = note.content_html;
+        const h3 = tempDiv.querySelector('h3');
+        if (h3) h3.remove();
+        const content = escapeCSVField(tempDiv.innerText.trim());
+        
+        const link = escapeCSVField(note.link);
+        csvContent += `${date},${type},${content},${link}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `bigquery_release_notes_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function escapeCSVField(field) {
+    if (field === null || field === undefined) {
+        return "";
+    }
+    let stringVal = String(field);
+    stringVal = stringVal.replace(/"/g, '""');
+    if (stringVal.includes(",") || stringVal.includes('"') || stringVal.includes("\n") || stringVal.includes("\r")) {
+        stringVal = `"${stringVal}"`;
+    }
+    return stringVal;
 }
