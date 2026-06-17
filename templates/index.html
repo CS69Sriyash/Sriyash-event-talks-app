@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <div class="logo-glow"></div>
+                    <i data-lucide="database" class="logo-icon"></i>
+                    <div class="logo-text">
+                        <span class="logo-title">BigQuery</span>
+                        <span class="logo-subtitle">Release Notes</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-card" data-filter="all">
+                    <span class="stat-num" id="stat-all">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-card" data-filter="Feature">
+                    <span class="stat-num" id="stat-feature">0</span>
+                    <span class="stat-label">Features</span>
+                </div>
+                <div class="stat-card" data-filter="Issue">
+                    <span class="stat-num" id="stat-issue">0</span>
+                    <span class="stat-label">Issues</span>
+                </div>
+                <div class="stat-card" data-filter="Breaking">
+                    <span class="stat-num" id="stat-breaking">0</span>
+                    <span class="stat-label">Breaking</span>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="search-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search updates...">
+                </div>
+                
+                <div class="type-filters" id="type-filters">
+                    <button class="filter-badge active" data-type="all">All</button>
+                    <button class="filter-badge" data-type="Feature">Features</button>
+                    <button class="filter-badge" data-type="Issue">Issues</button>
+                    <button class="filter-badge" data-type="Breaking">Breaking</button>
+                    <button class="filter-badge" data-type="Announcement">Announcements</button>
+                    <button class="filter-badge" data-type="Change">Changes</button>
+                </div>
+            </div>
+            
+            <!-- Notes List -->
+            <div class="notes-list-container">
+                <div class="loading-state" id="list-loading">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+                <div class="error-state hidden" id="list-error">
+                    <i data-lucide="alert-triangle"></i>
+                    <p>Failed to load release notes</p>
+                    <button class="btn btn-secondary btn-sm" id="btn-retry-list">Retry</button>
+                </div>
+                <div class="empty-state hidden" id="list-empty">
+                    <i data-lucide="filter-x"></i>
+                    <p>No release notes found</p>
+                </div>
+                <div class="notes-list" id="notes-list">
+                    <!-- Note items will be injected here -->
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area / Detail Viewer -->
+        <main class="main-content">
+            <!-- Top Controls Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 class="page-title">Updates Feed</h1>
+                    <p class="page-subtitle" id="feed-updated-time">Last updated: Checking...</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="btn-refresh">
+                        <i data-lucide="refresh-cw" class="btn-spinner" id="refresh-spinner"></i>
+                        <span>Refresh Notes</span>
+                    </button>
+                </div>
+            </header>
+            
+            <div class="detail-container">
+                <!-- Empty State (No Note Selected) -->
+                <div class="detail-empty-state" id="detail-empty-state">
+                    <div class="empty-glow"></div>
+                    <div class="empty-illustration">
+                        <i data-lucide="newspaper" class="floating-icon"></i>
+                        <i data-lucide="sparkles" class="decor-sparkle-1"></i>
+                        <i data-lucide="sparkles" class="decor-sparkle-2"></i>
+                    </div>
+                    <h2>Stay in the Loop</h2>
+                    <p>Select a BigQuery release note from the sidebar to inspect its detailed notes, copy snippets, and draft a Tweet about the update.</p>
+                </div>
+                
+                <!-- Detail Viewer & Tweet Composer -->
+                <div class="detail-viewer hidden" id="detail-viewer">
+                    <!-- Note Detail Card -->
+                    <section class="card note-detail-card">
+                        <div class="note-detail-header">
+                            <div class="note-badges">
+                                <span class="badge badge-date" id="detail-date">June 16, 2026</span>
+                                <span class="badge" id="detail-type">Feature</span>
+                            </div>
+                            <a href="#" target="_blank" class="detail-link" id="detail-doc-link">
+                                <span>Official Docs</span>
+                                <i data-lucide="external-link"></i>
+                            </a>
+                        </div>
+                        <div class="note-detail-content" id="detail-content">
+                            <!-- HTML note content injected here -->
+                        </div>
+                    </section>
+                    
+                    <!-- Tweet Composer Card -->
+                    <section class="card tweet-composer-card">
+                        <div class="tweet-composer-header">
+                            <div class="composer-title-area">
+                                <i data-lucide="twitter" class="tweet-icon"></i>
+                                <h3>Draft a Tweet</h3>
+                            </div>
+                            <span class="composer-tip">Preview and edit your tweet before posting.</span>
+                        </div>
+                        
+                        <div class="tweet-composer-body">
+                            <div class="textarea-wrapper">
+                                <textarea id="tweet-textarea" placeholder="What's happening?"></textarea>
+                                <div class="textarea-focus-glow"></div>
+                            </div>
+                            
+                            <div class="composer-actions">
+                                <div class="character-counter">
+                                    <svg class="progress-ring" width="30" height="30">
+                                        <circle class="progress-ring__background" stroke="#2a3042" stroke-width="2.5" fill="transparent" r="12" cx="15" cy="15"/>
+                                        <circle class="progress-ring__circle" id="char-progress-circle" stroke="#3b82f6" stroke-width="2.5" fill="transparent" r="12" cx="15" cy="15"/>
+                                    </svg>
+                                    <span id="char-count-text">280</span>
+                                </div>
+                                
+                                <button class="btn btn-tweet" id="btn-share-tweet">
+                                    <i data-lucide="send"></i>
+                                    <span>Post to X / Twitter</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
