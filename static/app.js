@@ -37,6 +37,9 @@ const btnExportCsv = document.getElementById('btn-export-csv');
 const themeCheckbox = document.getElementById('theme-checkbox');
 const btnCopyDetail = document.getElementById('btn-copy-detail');
 
+const btnSearchClear = document.getElementById('btn-search-clear');
+const btnCopyTweet = document.getElementById('btn-copy-tweet');
+
 // Circular progress constants
 const CIRCLE_RADIUS = 12;
 const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS; // ~75.4
@@ -58,7 +61,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add filter search handlers
     searchInput.addEventListener('input', (e) => {
         state.searchQuery = e.target.value.toLowerCase();
+        
+        // Show/hide clear button
+        if (state.searchQuery) {
+            btnSearchClear.classList.remove('hidden');
+        } else {
+            btnSearchClear.classList.add('hidden');
+        }
         applyFilters();
+    });
+
+    // Clear search click handler
+    btnSearchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        state.searchQuery = '';
+        btnSearchClear.classList.add('hidden');
+        applyFilters();
+        searchInput.focus();
     });
 
     // Add category filter handlers
@@ -116,6 +135,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Detail copy button
     btnCopyDetail.addEventListener('click', copySelectedNoteToClipboard);
+
+    // Copy Tweet draft action
+    btnCopyTweet.addEventListener('click', () => {
+        const tweetText = tweetTextarea.value;
+        if (!tweetText) return;
+        copyTextToClipboard(tweetText, btnCopyTweet, "Tweet draft copied to clipboard!");
+    });
+
+    // Quick tag badges append action
+    document.querySelectorAll('.tag-badge').forEach(tagBadge => {
+        tagBadge.addEventListener('click', () => {
+            const tagText = tagBadge.dataset.tag;
+            let currentText = tweetTextarea.value;
+            
+            // Check if tag already exists
+            if (currentText.includes(tagText)) {
+                showToast(`Tag ${tagText} is already added!`, 'info');
+                return;
+            }
+            
+            // Check length constraints
+            if (currentText.length + tagText.length + 1 > 280) {
+                showToast("Cannot add tag: Tweet would exceed 280 characters limit.", "error");
+                return;
+            }
+            
+            // Format spacing
+            if (currentText.trim() !== '') {
+                currentText = currentText.trim() + ' ' + tagText;
+            } else {
+                currentText = tagText;
+            }
+            
+            tweetTextarea.value = currentText;
+            handleTweetTextChange();
+            showToast(`Added tag: ${tagText}`);
+        });
+    });
 
     // Load notes initially
     fetchReleaseNotes();
@@ -349,6 +406,11 @@ function selectNote(noteId) {
 
     // Make sure Lucide icons in the detail header are rendered
     lucide.createIcons();
+
+    // Smooth scroll to details on mobile/tablet viewports
+    if (window.innerWidth <= 1024) {
+        detailViewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // Manage tweet composer text changes
@@ -446,7 +508,7 @@ function showError() {
 }
 
 // Clipboard copying utility
-async function copyTextToClipboard(text, button) {
+async function copyTextToClipboard(text, button, successMsg = 'Copied to clipboard!') {
     try {
         await navigator.clipboard.writeText(text);
         button.classList.add('success');
@@ -461,6 +523,7 @@ async function copyTextToClipboard(text, button) {
             button.innerHTML = `<i data-lucide="check"></i>`;
         }
         lucide.createIcons();
+        showToast(successMsg);
         
         setTimeout(() => {
             button.classList.remove('success');
@@ -469,6 +532,7 @@ async function copyTextToClipboard(text, button) {
         }, 1800);
     } catch (err) {
         console.error('Failed to copy text: ', err);
+        showToast('Failed to copy to clipboard', 'error');
     }
 }
 
@@ -484,13 +548,13 @@ function copySelectedNoteToClipboard() {
     const cleanContent = tempDiv.innerText.trim();
     
     const formattedText = `BigQuery Release Note [${note.date}] - ${note.type}:\n\n${cleanContent}\n\nRead more: ${note.link}`;
-    copyTextToClipboard(formattedText, btnCopyDetail);
+    copyTextToClipboard(formattedText, btnCopyDetail, "Update notes copied to clipboard!");
 }
 
 // Exports filtered notes list to a downloadable CSV file
 function exportToCSV() {
     if (state.filteredNotes.length === 0) {
-        alert("No release notes to export.");
+        showToast("No release notes to export.", "error");
         return;
     }
     
@@ -520,6 +584,7 @@ function exportToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("CSV exported successfully!");
 }
 
 function escapeCSVField(field) {
@@ -532,4 +597,35 @@ function escapeCSVField(field) {
         stringVal = `"${stringVal}"`;
     }
     return stringVal;
+}
+
+// Floating Toast Notification System
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+    toast.innerHTML = `
+        <i data-lucide="${iconName}"></i>
+        <span class="toast-message">${message}</span>
+    `;
+    
+    toastContainer.appendChild(toast);
+    lucide.createIcons();
+    
+    // Animate in
+    setTimeout(() => toast.classList.add('show'), 50);
+    
+    // Auto dismiss
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode === toastContainer) {
+                toastContainer.removeChild(toast);
+            }
+        }, 350);
+    }, 3000);
 }

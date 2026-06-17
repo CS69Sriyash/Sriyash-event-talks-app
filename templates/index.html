@@ -54,6 +54,9 @@
                 <div class="search-wrapper">
                     <i data-lucide="search" class="search-icon"></i>
                     <input type="text" id="search-input" placeholder="Search updates...">
+                    <button class="search-clear hidden" id="btn-search-clear" title="Clear search">
+                        <i data-lucide="x"></i>
+                    </button>
                 </div>
                 
                 <div class="type-filters" id="type-filters">
@@ -170,6 +173,16 @@
                                 <div class="textarea-focus-glow"></div>
                             </div>
                             
+                            <div class="composer-tags">
+                                <span class="tags-label">Quick tags:</span>
+                                <div class="tags-list">
+                                    <button class="tag-badge" data-tag="#BigQuery">#BigQuery</button>
+                                    <button class="tag-badge" data-tag="#GCP">#GCP</button>
+                                    <button class="tag-badge" data-tag="#GoogleCloud">#GoogleCloud</button>
+                                    <button class="tag-badge" data-tag="#GenerativeAI">#GenerativeAI</button>
+                                </div>
+                            </div>
+                            
                             <div class="composer-actions">
                                 <div class="character-counter">
                                     <svg class="progress-ring" width="30" height="30">
@@ -179,10 +192,15 @@
                                     <span id="char-count-text">280</span>
                                 </div>
                                 
-                                <button class="btn btn-tweet" id="btn-share-tweet">
-                                    <i data-lucide="send"></i>
-                                    <span>Post to X / Twitter</span>
-                                </button>
+                                <div class="composer-buttons">
+                                    <button class="btn btn-secondary btn-icon-only" id="btn-copy-tweet" title="Copy tweet draft">
+                                        <i data-lucide="copy"></i>
+                                    </button>
+                                    <button class="btn btn-tweet" id="btn-share-tweet">
+                                        <i data-lucide="send"></i>
+                                        <span>Post to X / Twitter</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -190,6 +208,9 @@
             </div>
         </main>
     </div>
+    
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
     
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>
